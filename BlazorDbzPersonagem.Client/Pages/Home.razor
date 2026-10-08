@@ -1,0 +1,73 @@
+@page "/"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorDbzPersonagem.Client.Models
+@inject HttpClient Http
+
+<PageTitle>Dragon Ball</PageTitle>
+
+<h3>Buscar Personagem</h3>
+
+<div class="mb-3">
+    <label>ID do personagem:</label>
+    <input type="number" @bind="id" min="1" />
+    <button class="btn btn-primary" @onclick="BuscarPersonagem">Buscar</button>
+</div>
+
+@if (carregando)
+{
+    <p>Carregando...</p>
+}
+else if (!string.IsNullOrEmpty(erro))
+{
+    <p style="color:red">@erro</p>
+}
+else if (personagem != null)
+{
+    <h2>Informações do Personagem</h2>
+
+    <p><strong>Nome:</strong> @personagem.Name</p>
+    <p><strong>Planeta de Origem:</strong> @personagem.OriginPlanet?.Name</p>
+
+    <h3>Transformações:</h3>
+    @if (personagem.Transformations.Any())
+    {
+        <ul>
+            @foreach (var t in personagem.Transformations)
+            {
+                <li>@t.Name</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>Este personagem não possui transformações.</p>
+    }
+}
+
+@code {
+    private int id = 1;
+    private Personagem? personagem;
+    private bool carregando;
+    private string erro = string.Empty;
+
+    private async Task BuscarPersonagem()
+    {
+        carregando = true;
+        erro = string.Empty;
+        personagem = null;
+
+        try
+        {
+            personagem = await Http.GetFromJsonAsync<Personagem>(
+                $"https://dragonball-api.com/api/characters/{id}");
+        }
+        catch (HttpRequestException)
+        {
+            erro = "Personagem não encontrado ou falha ao acessar a API.";
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+}
